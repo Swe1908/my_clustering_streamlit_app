@@ -1,27 +1,50 @@
 import streamlit as st
-import pickle
 import matplotlib.pyplot as plt
-from sklearn.datasets import make_blobs
+from sklearn.datasets import load_iris
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+import numpy as np
 
-with open('kmeans_model.pkl','rb') as f:
-    loaded_model = pickle.load(f)
-    
-    st.set_page_config(page_title="k-Means Clustering App", layout="centered")
-    
-    st.title(" k-Means Clustering Visualizer by Swe Zin Win Lae")
-    
-   
-    from sklearn.datasets import make_blobs
-    X, _ =make_blobs(n_samples=300, centers=loaded_model.n_clusters, cluster_std=0.60, random_state=0)
-    y_kmeans = loaded_model.predict(X)
+# Set page config
+st.set_page_config(page_title="k-Means Clustering App", layout="centered")
 
-# Plotting
+# Title
+st.markdown("<h1 style='text-align: center;'>🔍 K-Means Clustering App with Iris Dataset by Swe Zin Win Lae</h1>", unsafe_allow_html=True)
+
+# Sidebar
+st.sidebar.header("Configure Clustering")
+k = st.sidebar.slider("Select number of clusters (k)", 2, 10, 4)
+
+# Load dataset
+iris = load_iris()
+X = iris.data
+
+# Reduce to 2D with PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X)
+
+# Apply KMeans
+kmeans = KMeans(n_clusters=k, random_state=42)
+labels = kmeans.fit_predict(X)
+
+# Define color list (make sure enough colors for up to 10 clusters)
+color_list = ['orange', 'green', 'blue', 'red', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+
+# Plot
 fig, ax = plt.subplots()
-scatter = ax.scatter(X[:, 0], X[:, 1], c=y_kmeans, cmap='viridis')
-ax.scatter(loaded_model.cluster_centers_[:, 0],loaded_model.cluster_centers_[:, 1], s=300, c='red')
-ax.set_title('k-Means Clustering')
-ax.legend()
-st.pyplot(fig)
+for i in range(k):
+    cluster_points = X_pca[labels == i]
+    if len(cluster_points) > 0:
+        ax.scatter(cluster_points[:, 0], cluster_points[:, 1], 
+                   color=color_list[i], label=f"Cluster {i}", s=50)
 
+# Titles and legend
+ax.set_title("Clusters (2D PCA Projection)")
+ax.set_xlabel("PCA1")
+ax.set_ylabel("PCA2")
+ax.legend(title="Clusters")
+
+# Show in Streamlit
+st.pyplot(fig)
 
 
